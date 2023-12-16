@@ -1,0 +1,4 @@
+fredapi==0.5.1
+pandas==2.1.4
+python-dotenv==1.0.0
+yfinance==0.2.33
