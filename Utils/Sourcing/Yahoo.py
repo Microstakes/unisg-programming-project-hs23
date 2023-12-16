@@ -5,7 +5,25 @@ import pandas as pd
 import yfinance as yf
 
 
-def fetch_total_returns(tickers, start_date, end_date=None):
+def fetch_total_returns(
+    tickers: list, start_date: str, end_date: str | None = None
+) -> pd.DataFrame | None:
+    """Function to fetch daily total returns data from Yahoo Finance through yfinance
+
+    Parameters
+    ----------
+    tickers : list
+        list of Yahoo tickers
+    start_date : str
+        First oberservation date as string in format 'YYYY-MM-DD'
+    end_date : str | None, optional
+        Last oberservation date as string in format 'YYYY-MM-DD', by default None (converted to today's date)
+
+    Returns
+    -------
+    pd.DataFrame | None
+        _description_
+    """
     if not end_date:
         end_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -15,7 +33,10 @@ def fetch_total_returns(tickers, start_date, end_date=None):
     temp_close = temp_download.iloc[
         :, temp_download.columns.get_level_values(0) == "Close"
     ]
-    temp_close.columns = temp_close.columns.droplevel(0)
+    if temp_close.columns.nlevels == 2:
+        temp_close.columns = temp_close.columns.droplevel(0)
+    else:
+        temp_close.columns = tickers
     temp_close.index = pd.to_datetime(temp_close.index).strftime("%Y-%m-%d")
 
     df_dividends = pd.DataFrame()
@@ -31,5 +52,5 @@ def fetch_total_returns(tickers, start_date, end_date=None):
     total_returns = (
         temp_close.add(df_dividends, fill_value=0.0).pct_change().dropna(how="all")
     )
-
-    return total_returns
+    if not total_returns.empty:
+        return total_returns
