@@ -42,5 +42,5 @@ def fetch_macro_data(
         except Exception as e:
             print(f"Error fetching data for {series_id}: {e}")
     df_macro_data = pd.DataFrame(temp_macro_data)
-    if not temp_macro_data.empty:
+    if not df_macro_data.empty:
         return df_macro_data
