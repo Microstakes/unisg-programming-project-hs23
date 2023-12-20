@@ -14,14 +14,22 @@ Skills: Programming 2023
 <pre>
 
 .
+├── Input
+│   ├── portfolio.xlsx
+│   └── template.xlsx
+├── Output
+│   └── portfolio_overview.xlsx
+├── PortfolioAnalyser.ipynb
 ├── README.md
 ├── Utils
+│   ├── Portfolio
+│   │   ├── Formatting.py
+│   │   ├── Portfolio.py
+│   │   ├── Stats.py
 │   └── Sourcing
 │       ├── FRED.py
 │       ├── Yahoo.py
 │       ├── __init__.py
-│       └── __pycache__
-│           └── FRED.py
 └── requirements.txt
 
 <pre>
