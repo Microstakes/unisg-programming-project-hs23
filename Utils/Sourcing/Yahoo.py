@@ -29,12 +29,12 @@ def fetch_ohlc(
         DataFrame with Open, High, Low, Close, and Volume
     """
     if not end_date:
-        end_date = datetime.now().strftime("%Y-%m-%d")
+        end_date = pd.to_datetime('today')
 
     if type(tickers) == str:
         tickers = [tickers]
 
-    temp_download = yf.download(
+    ohlc_data = yf.download(
         tickers, start=start_date, end=end_date, auto_adjust=True, progress=False
     )
 
@@ -42,18 +42,16 @@ def fetch_ohlc(
         df_dividends = pd.DataFrame()
         for ticker in tickers:
             yf_ticker = yf.Ticker(ticker)
-            temp_dividends = pd.DataFrame(yf_ticker.get_dividends())
-            temp_dividends = temp_dividends.rename(columns={"Dividends": ticker})
+            temp_dividends = pd.DataFrame(yf_ticker.dividends)
+            temp_dividends = temp_dividends.rename(columns={ticker: "Dividends"})
             df_dividends = pd.concat([df_dividends, temp_dividends])
 
         df_dividends.index = pd.to_datetime(df_dividends.index).strftime("%Y-%m-%d")
-        df_dividends = df_dividends[df_dividends.index >= min(temp_download.index)]
+        df_dividends = df_dividends[df_dividends.index >= min(ohlc_data.index)]
 
-        ohlc_data = temp_download.add(df_dividends, fill_value=0.0)
-    else:
-        ohlc_data = temp_download
+        ohlc_data = ohlc_data.join(df_dividends, how="outer")
 
-    return ohlc_data
+    return ohlc_data[['Open', 'High', 'Low', 'Close', 'Volume']]
 
 def fetch_returns(
     tickers: list | str,
