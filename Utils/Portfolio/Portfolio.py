@@ -6,7 +6,7 @@ from numpy import cumprod
 from openpyxl import load_workbook
 from pandas import DataFrame, Series, concat, date_range
 
-from ..Sourcing.Yahoo import fetch_company_info, fetch_returns
+from ..Sourcing.Yahoo import fetch_company_info, fetch_returns, fetch_ohlc
 from .Formatting import line_plot, write_df_to_xlsx_table
 from .Stats import annualised_volatility, beta
 
@@ -81,6 +81,23 @@ class PortfolioAnalysis:
             self.include_dividends,
         ).reindex(self.date_range, fill_value=0)
         return constituent_returns
+    
+    def get_constituent_ohlc_daily(self) -> DataFrame | None:
+        """Function to get a DataFrame containing daily OHLCV data for all constituents within the portfolio
+
+        Returns
+        -------
+        DataFrame | None
+            DataFrame with Open, High, Low, Close, and Volume for each constituent
+        """
+    ohlc_data = fetch_ohlc_data(
+        self.portfolio_tickers,
+        self.start_date,
+        self.end_date,
+    ).reindex(self.date_range, fill_value=0)
+
+    return ohlc_data
+
 
     def get_portfolio_returns_daily(self):
         """Function to get a series containing daily portfolio returns
