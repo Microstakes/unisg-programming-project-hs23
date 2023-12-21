@@ -1,4 +1,4 @@
-# unisgs skills programming group projects
+# unisg skills programming group project
 
 Skills: Programming 2023
 
