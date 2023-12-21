@@ -102,11 +102,6 @@ def fetch_returns(
     else:
         returns = temp_close.ffill().pct_change().dropna(how="all")
         
-    ohlc_data = fetch_ohlc(tickers, start_date, end_date, include_dividends)
-    
-    if not ohlc_data.empty:
-        returns = ohlc_data['Close'].pct_change().dropna(how="all")
-
     if not returns.empty:
         return returns
 
