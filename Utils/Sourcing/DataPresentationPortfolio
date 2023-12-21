@@ -1,1 +1,59 @@
+from flask import Flask, render_template, request, send_file
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from io import BytesIO
+from YourPortfolioAnalysisModule import PortfolioAnalysis  # <-- Adjust this import
+import mplfinance as mpf
 
+app = Flask(__name__)
+
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # Get the uploaded file
+        file = request.files['file']
+
+        # Read the Excel file into a Pandas DataFrame
+        df = pd.read_excel(file)
+
+        # Get the tickers column name from the form
+        tickers_column = request.form['tickers_column']
+
+        # Perform your analysis and generate the candlestick chart
+        candlestick_chart = generate_candlestick_chart(df, tickers_column)
+
+        # Save the figure to a BytesIO object
+        image_stream = BytesIO()
+        plt.savefig(image_stream, format='png')
+        image_stream.seek(0)
+
+        # Render the results in an HTML page
+        return render_template('results.html', candlestick_chart=image_stream)
+
+    return render_template('upload.html')
+
+def generate_candlestick_chart(df, tickers_column):
+    # Extract tickers and historical price data
+    tickers = df[tickers_column].unique()
+
+    # Create a figure and axis for the candlestick chart
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Loop through tickers and create a candlestick chart for each
+    for ticker in tickers:
+        # Filter data for the current ticker
+        ticker_data = df[df[tickers_column] == ticker]
+
+        # Create a candlestick chart using mplfinance
+        mpf.plot(ticker_data, type='candle', ax=ax, title=f'Candlestick Chart - {ticker}')
+
+    # Save the figure to a BytesIO object
+    image_stream = BytesIO()
+    plt.savefig(image_stream, format='png')
+    image_stream.seek(0)
+
+    return image_stream
+
+if __name__ == '__main__':
+    app.run(debug=True)
