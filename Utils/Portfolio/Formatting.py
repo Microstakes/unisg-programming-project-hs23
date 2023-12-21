@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from mplfinance import plot as mpl_plot
 from openpyxl import workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -99,3 +100,7 @@ def line_plot(
         plt.gca().yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
 
     plt.show()
+
+
+def candle_plot(df, title: str = None, mav: int = 9):
+    mpl_plot(df, title=title, type="candle", style="charles", figsize=(10, 5), mav=mav)

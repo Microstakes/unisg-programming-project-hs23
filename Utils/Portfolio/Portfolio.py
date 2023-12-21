@@ -6,8 +6,8 @@ from numpy import cumprod
 from openpyxl import load_workbook
 from pandas import DataFrame, Series, concat, date_range
 
-from ..Sourcing.Yahoo import fetch_company_info, fetch_returns, fetch_ohlc
-from .Formatting import line_plot, write_df_to_xlsx_table
+from ..Sourcing.Yahoo import fetch_company_info, fetch_ohlc, fetch_returns
+from .Formatting import candle_plot, line_plot, write_df_to_xlsx_table
 from .Stats import annualised_volatility, beta
 
 
@@ -18,7 +18,6 @@ class PortfolioAnalysis:
         self.start_date = params.get("start_date", None)
         self.end_date = params.get("end_date", None)
         self.benchmark = params.get("benchmark", None)
-        self.include_dividends = params.get("include_dividends", False)
 
         self.portfolio_tickers = self.df_portfolio.index.unique().tolist()
         self.portfolio_total_weight = sum(self.df_portfolio["weight"])
@@ -78,10 +77,9 @@ class PortfolioAnalysis:
             self.portfolio_tickers,
             self.start_date,
             self.end_date,
-            self.include_dividends,
         ).reindex(self.date_range, fill_value=0)
         return constituent_returns
-    
+
     def get_constituent_ohlc_daily(self) -> DataFrame | None:
         """Function to get a DataFrame containing daily OHLCV data for all constituents within the portfolio
 
@@ -90,14 +88,12 @@ class PortfolioAnalysis:
         DataFrame | None
             DataFrame with Open, High, Low, Close, and Volume for each constituent
         """
-    ohlc_data = fetch_ohlc_data(
-        self.portfolio_tickers,
-        self.start_date,
-        self.end_date,
-    ).reindex(self.date_range, fill_value=0)
-
-    return ohlc_data
-
+        ohlc_data = fetch_ohlc(
+            self.portfolio_tickers,
+            self.start_date,
+            self.end_date,
+        )
+        return ohlc_data
 
     def get_portfolio_returns_daily(self):
         """Function to get a series containing daily portfolio returns
@@ -135,7 +131,7 @@ class PortfolioAnalysis:
             _description_
         """
         benchmark_returns = fetch_returns(
-            self.benchmark, self.start_date, self.end_date, self.include_dividends
+            self.benchmark, self.start_date, self.end_date
         ).reindex(self.date_range, fill_value=0)[self.benchmark]
         return benchmark_returns
 
@@ -350,3 +346,24 @@ class PortfolioAnalysis:
                 returns = ticker_returns
 
             line_plot(returns, title="Cumulative returns")
+
+    def plot_constituent_candles(self) -> plot:
+        """Function to create candle charts for constituents
+
+        Returns
+        -------
+        plot
+            plot(s) containing the desired candle charts
+        """
+        ohlc = self.get_constituent_ohlc_daily()
+
+        for ticker in ohlc.columns.get_level_values(1).unique().tolist():
+            ticker_returns = ohlc.loc[:, (slice(None), ticker)][
+                ["Open", "High", "Low", "Close"]
+            ]
+            ticker_returns.columns = ticker_returns.columns.droplevel(1)
+            ticker_name = self.constituents_info.at[ticker, "name"]
+
+            returns = ticker_returns
+
+            candle_plot(returns, title=ticker_name)

@@ -4,15 +4,13 @@ from datetime import datetime
 import pandas as pd
 import yfinance as yf
 
-import pandas as pd
-import yfinance as yf
 
 def fetch_ohlc(
     tickers: list | str,
     start_date: str,
     end_date: str | None = None,
 ) -> pd.DataFrame | None:
-    """Function to fetch daily OHLCV data from Yahoo Finance through yfinance
+    """Function to fetch daily OHLC data from Yahoo Finance through yfinance
 
     Parameters
     ----------
@@ -29,7 +27,7 @@ def fetch_ohlc(
         DataFrame with Open, High, Low, Close, and Volume
     """
     if not end_date:
-        end_date = pd.to_datetime('today')
+        end_date = pd.to_datetime("today")
 
     if type(tickers) == str:
         tickers = [tickers]
@@ -38,13 +36,15 @@ def fetch_ohlc(
         tickers, start=start_date, end=end_date, auto_adjust=True, progress=False
     )
 
-    return ohlc_data[['Open', 'High', 'Low', 'Close', 'Volume']]
+    ohlc_data.index = pd.to_datetime(ohlc_data.index)
+
+    return ohlc_data[["Open", "High", "Low", "Close"]]
+
 
 def fetch_returns(
     tickers: list | str,
     start_date: str,
     end_date: str | None = None,
-    include_dividends: bool = False,
 ) -> pd.DataFrame | None:
     """Function to fetch daily total returns data from Yahoo Finance through yfinance
 
@@ -56,8 +56,6 @@ def fetch_returns(
         First oberservation date as string in format 'YYYY-MM-DD'
     end_date : str | None, optional
         Last oberservation date as string in format 'YYYY-MM-DD', by default None (converted to today's date)
-    include_dividends: bool
-        Decide whether to include dividends (total returns) or not (price returns)
 
     Returns
     -------
@@ -82,26 +80,8 @@ def fetch_returns(
         temp_close.columns = tickers
     temp_close.index = pd.to_datetime(temp_close.index).strftime("%Y-%m-%d")
 
-    if include_dividends:
-        df_dividends = pd.DataFrame()
-        for ticker in tickers:
-            yf_ticker = yf.Ticker(ticker)
-            temp_dividends = pd.DataFrame(yf_ticker.get_dividends())
-            temp_dividends = temp_dividends.rename(columns={"Dividends": ticker})
-            df_dividends = pd.concat([df_dividends, temp_dividends])
+    returns = temp_close.ffill().pct_change().dropna(how="all")
 
-        df_dividends.index = pd.to_datetime(df_dividends.index).strftime("%Y-%m-%d")
-        df_dividends = df_dividends[df_dividends.index >= min(temp_close.index)]
-
-        returns = (
-            temp_close.add(df_dividends, fill_value=0.0)
-            .ffill()
-            .pct_change()
-            .dropna(how="all")
-        )
-    else:
-        returns = temp_close.ffill().pct_change().dropna(how="all")
-        
     if not returns.empty:
         return returns
 
