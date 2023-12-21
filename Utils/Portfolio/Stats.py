@@ -5,19 +5,19 @@ from sklearn.linear_model import LinearRegression
 
 ## Create function to calculate stock betas vs. given benchmark
 def beta(x: Series, y: Series) -> float | None:
-    """_summary_
+    """Function to calculate stock betas
 
     Parameters
     ----------
     x : Series
-        X series
+        X series (i.e. benchmark)
     y : Series
-        Y series
+        Y series (i.e. stock)
 
     Returns
     -------
-    _type_
-        _description_
+    float
+        returns beta as float
     """
     beta = (
         LinearRegression(fit_intercept=False)

@@ -1,12 +1,13 @@
 from datetime import datetime
 from os import path
 
+from matplotlib.pyplot import plot
 from numpy import cumprod
 from openpyxl import load_workbook
 from pandas import DataFrame, Series, concat, date_range
 
 from ..Sourcing.Yahoo import fetch_company_info, fetch_returns
-from .Formatting import write_df_to_xlsx_table
+from .Formatting import line_plot, write_df_to_xlsx_table
 from .Stats import annualised_volatility, beta
 
 
@@ -46,6 +47,7 @@ class PortfolioAnalysis:
         self.constituent_returns = self.get_constituent_returns_daily()
         self.benchmark_returns = self.get_benchmark_returns_daily()
         self.constituents_info = self.get_constituents_info()
+        self.benchmark_info = fetch_company_info(self.benchmark)
 
     def get_constituents_info(self) -> DataFrame | None:
         """Function to get a df containing basic info for all constituents within the portfolio
@@ -53,7 +55,7 @@ class PortfolioAnalysis:
         Returns
         -------
         _type_
-            _description_
+            df containing basic constituents info
         """
         temp_constituents_info = DataFrame(
             [fetch_company_info(ticker) for ticker in self.portfolio_tickers]
@@ -265,3 +267,69 @@ class PortfolioAnalysis:
         file_path = path.join(self.path_output, f"{output_name}.xlsx")
         wb.save(file_path)
         print(f"{datetime.now()} - Portfolio output saved here: {file_path}")
+
+    def plot_returns_daily(self, include_benchmark: bool = True) -> plot:
+        """Function to plot daily stock returns for all constituents
+
+        Parameters
+        ----------
+        include_benchmark : bool, optional
+            if set to True, stock returns will be plotted along with benchmark returns, by default True
+
+        Returns
+        -------
+        plot
+            plot(s) containing the desired returns
+        """
+        constituent_returns = self.constituent_returns
+        constituents_info = self.constituents_info
+
+        if include_benchmark:
+            benchmark_returns = self.benchmark_returns
+            benchmark_name = self.benchmark_info["name"]
+            benchmark_returns.rename(benchmark_name)
+
+        for ticker in constituent_returns.columns:
+            ticker_returns = constituent_returns[ticker]
+            ticker_name = constituents_info.at[ticker, "name"]
+            ticker_returns = ticker_returns.rename(ticker_name)
+
+            if include_benchmark:
+                returns = [ticker_returns, benchmark_returns]
+            else:
+                returns = ticker_returns
+
+            line_plot(returns, title="Daily returns")
+
+    def plot_returns_cumulative(self, include_benchmark: bool = True) -> plot:
+        """Function to plot cumulative stock returns for all constituents
+
+        Parameters
+        ----------
+        include_benchmark : bool, optional
+            if set to True, stock returns will be plotted along with benchmark returns, by default True
+
+        Returns
+        -------
+        plot
+            plot(s) containing the desired returns
+        """
+        constituent_returns = cumprod(1 + self.constituent_returns) - 1
+        constituents_info = self.constituents_info
+
+        if include_benchmark:
+            benchmark_returns = cumprod(1 + self.benchmark_returns) - 1
+            benchmark_name = self.benchmark_info["name"]
+            benchmark_returns.rename(benchmark_name)
+
+        for ticker in constituent_returns.columns:
+            ticker_returns = constituent_returns[ticker]
+            ticker_name = constituents_info.at[ticker, "name"]
+            ticker_returns = ticker_returns.rename(ticker_name)
+
+            if include_benchmark:
+                returns = [ticker_returns, benchmark_returns]
+            else:
+                returns = ticker_returns
+
+            line_plot(returns, title="Cumulative returns")
