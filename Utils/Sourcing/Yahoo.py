@@ -27,7 +27,7 @@ def fetch_returns(
     Returns
     -------
     pd.DataFrame | None
-        _description_
+        df containing returns for all tickers
     """
     if not end_date:
         end_date = datetime.now().strftime("%Y-%m-%d")
@@ -71,7 +71,19 @@ def fetch_returns(
         return returns
 
 
-def fetch_company_info(ticker):
+def fetch_company_info(ticker: str) -> dict:
+    """Function to fetch company (or index) info from Yahoo Finance through yfinance
+
+    Parameters
+    ----------
+    ticker : str
+        ticker for which to fetch info
+
+    Returns
+    -------
+    dict
+        dict containing ticker, name, sector, market cap (usd), and country (if available)
+    """
     yf_ticker = yf.Ticker(ticker)
     temp_info = yf_ticker.info
     info = {
@@ -82,42 +94,3 @@ def fetch_company_info(ticker):
         "country": temp_info.get("country"),
     }
     return info
-
-
-def fetch_relative_returns(
-    assets: list | str,
-    benchmark: str,
-    start_date: str,
-    end_date: str | None = None,
-    include_dividends: bool = False,
-) -> pd.DataFrame | None:
-    """Function to fetch daily relative returns data from Yahoo Finance through yfinance
-
-    Parameters
-    ----------
-    assets : list | str
-        list of Yahoo tickers or Yahoo ticker as str
-    benchmark: str
-        Yahoo ticker as str
-    start_date : str
-        First oberservation date as string in format 'YYYY-MM-DD'
-    end_date : str | None, optional
-        Last oberservation date as string in format 'YYYY-MM-DD', by default None (converted to today's date)
-    include_dividends: bool
-        Decide whether to include dividends (total returns) or not (price returns)
-
-    Returns
-    -------
-    pd.DataFrame | None
-        _description_
-    """
-    asset_returns = fetch_returns(assets, start_date, end_date, include_dividends)
-    benchmark_returns = fetch_returns(
-        benchmark, start_date, end_date, include_dividends
-    )
-    relative_returns = (1 + asset_returns).div(
-        (1 + benchmark_returns[benchmark]), axis=0
-    ) - 1
-
-    if not relative_returns.empty:
-        return relative_returns

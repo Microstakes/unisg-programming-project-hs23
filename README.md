@@ -1,16 +1,31 @@
 # unisgs skills programming group projects
+
 Skills: Programming 2023
 
-## Get started 
-- Clone the project
-- install all requirements in requirements.txt
-- Set up your own .env file by copying .env.default and entering your credentials
+## Project
+
+-   This project is designed as a simple stock portfolio analysis tool
+    -   Portfolio analyses can be round for any desired constituents,
+        constituent weights, benchmarks, or time horizons
+    -   Analyses include:
+        -   Various portfolio performance metrics and comparisons vs. benchmark
+        -   Various constituents info and performance and risk metrics
+        -   Various outputs, such as plots as well as an Excel overview
+
+## Get started
+
+-   Clone the project
+-   install all requirements in requirements.txt
+-   Set up your own portfolio in Input/portfolio.xlsx
+-   See PortfolioAnalyser.ipynb for concrete examples
 
 ## Data Sourcing
-- Based on yfinance
 
+-   All data is sourced through the yfinance library
+-   All requests are simplified through functions in Utils/Sourcing/Yahoo.py
 
 ## Project structure
+
 <pre>
 
 .
@@ -28,7 +43,6 @@ Skills: Programming 2023
 │   │   ├── Stats.py
 │   │   ├── __init__.py
 │   └── Sourcing
-│       ├── FRED.py
 │       ├── Yahoo.py
 │       ├── __init__.py
 └── requirements.txt

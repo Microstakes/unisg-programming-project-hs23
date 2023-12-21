@@ -1,6 +1,7 @@
 from datetime import datetime
 from os import path
 
+from matplotlib.pyplot import plot
 from numpy import cumprod
 from openpyxl import load_workbook
 from pandas import DataFrame, Series, concat, date_range
@@ -54,7 +55,7 @@ class PortfolioAnalysis:
         Returns
         -------
         _type_
-            _description_
+            df containing basic constituents info
         """
         temp_constituents_info = DataFrame(
             [fetch_company_info(ticker) for ticker in self.portfolio_tickers]
@@ -267,7 +268,19 @@ class PortfolioAnalysis:
         wb.save(file_path)
         print(f"{datetime.now()} - Portfolio output saved here: {file_path}")
 
-    def plot_returns_daily(self, include_benchmark: bool = True):
+    def plot_returns_daily(self, include_benchmark: bool = True) -> plot:
+        """Function to plot daily stock returns for all constituents
+
+        Parameters
+        ----------
+        include_benchmark : bool, optional
+            if set to True, stock returns will be plotted along with benchmark returns, by default True
+
+        Returns
+        -------
+        plot
+            plot(s) containing the desired returns
+        """
         constituent_returns = self.constituent_returns
         constituents_info = self.constituents_info
 
@@ -288,7 +301,19 @@ class PortfolioAnalysis:
 
             line_plot(returns, title="Daily returns")
 
-    def plot_returns_cumulative(self, include_benchmark: bool = True):
+    def plot_returns_cumulative(self, include_benchmark: bool = True) -> plot:
+        """Function to plot cumulative stock returns for all constituents
+
+        Parameters
+        ----------
+        include_benchmark : bool, optional
+            if set to True, stock returns will be plotted along with benchmark returns, by default True
+
+        Returns
+        -------
+        plot
+            plot(s) containing the desired returns
+        """
         constituent_returns = cumprod(1 + self.constituent_returns) - 1
         constituents_info = self.constituents_info
 
