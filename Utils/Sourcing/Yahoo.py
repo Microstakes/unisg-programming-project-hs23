@@ -60,12 +60,12 @@ def fetch_returns(
 
         returns = (
             temp_close.add(df_dividends, fill_value=0.0)
-            .fillna(method="ffill")
+            .ffill()
             .pct_change()
             .dropna(how="all")
         )
     else:
-        returns = temp_close.fillna(method="ffill").pct_change().dropna(how="all")
+        returns = temp_close.ffill().pct_change().dropna(how="all")
 
     if not returns.empty:
         return returns

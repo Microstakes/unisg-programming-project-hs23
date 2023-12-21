@@ -7,11 +7,12 @@ import pandas as pd
 
 from ..Sourcing.Yahoo import fetch_company_info, fetch_returns
 from .Formatting import write_df_to_xlsx_table
-from .Stats import beta
+from .Stats import annualised_volatility, beta
 
 
 class PortfolioAnalysis:
     def __init__(self, portfolio: pd.DataFrame, params={}):
+        print(f"{datetime.now()} - initialising class PortfolioAnalysis")
         self.df_portfolio = portfolio
         self.start_date = params.get("start_date", None)
         self.end_date = params.get("end_date", None)
@@ -40,6 +41,12 @@ class PortfolioAnalysis:
 
         self.template_xlsx = os.path.join(self.path_input, "template.xlsx")
 
+        print(f"{datetime.now()} - fetching portfolio data")
+
+        self.constituent_returns = self.get_constituent_returns_daily()
+        self.benchmark_returns = self.get_benchmark_returns_daily()
+        self.constituents_info = self.get_constituents_info()
+
     def get_constituents_info(self):
         temp_constituents_info = pd.DataFrame(
             [fetch_company_info(ticker) for ticker in self.portfolio_tickers]
@@ -60,9 +67,7 @@ class PortfolioAnalysis:
         return constituent_returns
 
     def get_portfolio_returns_daily(self):
-        temp_returns = self.get_constituent_returns_daily().reindex(
-            self.date_range, fill_value=0
-        )
+        temp_returns = self.constituent_returns
         temp_weights = temp_returns.columns.map(self.df_portfolio["weight"])
         portfolio_returns = temp_returns.mul(temp_weights).sum(axis=1)
         return portfolio_returns
@@ -94,35 +99,41 @@ class PortfolioAnalysis:
         return return_overview_cumulative
 
     def get_relative_returns_daily(self):
-        temp_portfolio_returns = self.get_portfolio_returns_daily()
-        temp_benchmark_returns = self.get_benchmark_returns_daily()
-        relative_returns = (1 + temp_portfolio_returns).div(
-            (1 + temp_benchmark_returns), axis=0
-        ) - 1
+        temp_return_overview = self.get_return_overview_daily()
+        relative_returns = (
+            (1 + temp_return_overview["portfolio_return"]).div(
+                (1 + temp_return_overview["benchmark_return"]), axis=0
+            )
+            - 1
+        ).rename("relative_return")
         return relative_returns
 
     def get_sector_allocation(self):
-        temp_info = self.get_constituents_info()
+        temp_info = self.constituents_info
         sector_allocation = (
             temp_info.groupby("sector")["weight"].sum().sort_values(ascending=False)
         )
         return sector_allocation
 
     def get_country_allocation(self):
-        temp_info = self.get_constituents_info()
+        temp_info = self.constituents_info
         country_allocation = (
             temp_info.groupby("country")["weight"].sum().sort_values(ascending=False)
         )
         return country_allocation
 
     def get_constituents_stats(self):
-        constituent_returns = self.get_constituent_returns_daily()
-        bm_returns = self.get_benchmark_returns_daily()
+        constituent_returns = self.constituent_returns
+        bm_returns = self.benchmark_returns
         temp_volatility = pd.DataFrame(
-            constituent_returns.replace(0, None).std().rename("volatility")
+            constituent_returns.apply(
+                lambda stock_returns: annualised_volatility(stock_returns)
+            ).rename("volatility_annualised")
         )
         temp_betas = pd.DataFrame(
-            constituent_returns.apply(lambda x: beta(bm_returns, x)).rename("beta")
+            constituent_returns.apply(
+                lambda stock_returns: beta(bm_returns, stock_returns)
+            ).rename("beta")
         )
         temp_total_returns = pd.DataFrame(
             (np.cumprod(1 + constituent_returns) - 1).iloc[-1].rename("total_return")
@@ -147,11 +158,11 @@ class PortfolioAnalysis:
         )
         return constituent_stats
 
-    def create_xlsx_output(self):
-        info = self.get_constituents_info()
+    def create_xlsx_output(self, output_name: str = "portfolio_overview"):
+        info = self.constituents_info
         stats = self.get_constituents_stats()
         return_overview = self.get_return_overview_cumulative()
-        constituent_returns = self.get_constituent_returns_daily()
+        constituent_returns = self.constituent_returns
 
         wb = oxl.load_workbook(self.template_xlsx)
 
@@ -166,6 +177,7 @@ class PortfolioAnalysis:
             constituent_returns,
             base_formatting="0.00%;-0.00%",
         )
-
         del wb["Sheet1"]
-        wb.save(os.path.join(self.path_output, "portfolio_overview.xlsx"))
+        file_path = os.path.join(self.path_output, f"{output_name}.xlsx")
+        wb.save(file_path)
+        print(f"{datetime.now()} - Portfolio output saved here: {file_path}")
