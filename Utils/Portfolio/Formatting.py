@@ -1,8 +1,10 @@
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 from openpyxl import workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 ## create dictionary for automated number formatting of excel columns by name
 mappings_number_formattings = {
@@ -63,3 +65,37 @@ def write_df_to_xlsx_table(
             number_formatting = base_formatting
         for cell in ws[column_letter]:
             cell.number_format = number_formatting
+
+
+## create function to plot line charts for stock returns / prices
+def line_plot(
+    series: list[Series] | Series,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    format_as_pct=True,
+):
+    ### if series input, convert to list of series
+    if isinstance(series, Series):
+        series = [series]
+
+    plt.figure(figsize=(10, 5))
+
+    ### plot all series
+    for s in series:
+        s.plot(label=s.name)
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    ### base line chart params
+    plt.grid(True)
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    if format_as_pct:
+        plt.gca().yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
+
+    plt.show()
