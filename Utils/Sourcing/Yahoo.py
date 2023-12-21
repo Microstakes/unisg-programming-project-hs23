@@ -4,11 +4,13 @@ from datetime import datetime
 import pandas as pd
 import yfinance as yf
 
+import pandas as pd
+import yfinance as yf
+
 def fetch_ohlc(
     tickers: list | str,
     start_date: str,
     end_date: str | None = None,
-    include_dividends: bool = False,
 ) -> pd.DataFrame | None:
     """Function to fetch daily OHLCV data from Yahoo Finance through yfinance
 
@@ -20,8 +22,6 @@ def fetch_ohlc(
         First observation date as string in format 'YYYY-MM-DD'
     end_date : str | None, optional
         Last observation date as string in format 'YYYY-MM-DD', by default None (converted to today's date)
-    include_dividends: bool
-        Decide whether to include dividends (total returns) or not (price returns)
 
     Returns
     -------
@@ -37,19 +37,6 @@ def fetch_ohlc(
     ohlc_data = yf.download(
         tickers, start=start_date, end=end_date, auto_adjust=True, progress=False
     )
-
-    if include_dividends:
-        df_dividends = pd.DataFrame()
-        for ticker in tickers:
-            yf_ticker = yf.Ticker(ticker)
-            temp_dividends = pd.DataFrame(yf_ticker.dividends)
-            temp_dividends = temp_dividends.rename(columns={ticker: "Dividends"})
-            df_dividends = pd.concat([df_dividends, temp_dividends])
-
-        df_dividends.index = pd.to_datetime(df_dividends.index).strftime("%Y-%m-%d")
-        df_dividends = df_dividends[df_dividends.index >= min(ohlc_data.index)]
-
-        ohlc_data = ohlc_data.join(df_dividends, how="outer")
 
     return ohlc_data[['Open', 'High', 'Low', 'Close', 'Volume']]
 
