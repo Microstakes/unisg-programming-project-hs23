@@ -1,6 +1,8 @@
+from openpyxl import workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
+from pandas import DataFrame
 
 ## create dictionary for automated number formatting of excel columns by name
 mappings_number_formattings = {
@@ -14,7 +16,25 @@ mappings_number_formattings = {
 
 
 ## create function to write df to xlsx worksheet, formatted as Table
-def write_df_to_xlsx_table(wb, ws_name, df, base_formatting="General"):
+def write_df_to_xlsx_table(
+    wb: workbook,
+    ws_name: str,
+    df: DataFrame,
+    base_formatting: str = "General",
+) -> None:
+    """Function to write df to an Excel table using openpyxl
+
+    Parameters
+    ----------
+    wb : openpyxl workbook
+        oxl workbook item to which the ws should be added
+    ws_name : _type_
+        desired worksheet name in Excel output
+    df : DataFrame
+        df that should be written to Excel
+    base_formatting : str, optional
+        Excel number formatting applied to all columns not found in mappings_number_formattings, by default "General"
+    """
     wb.create_sheet(ws_name)
     ws = wb[ws_name]
     for row in dataframe_to_rows(df.reset_index(), index=False, header=True):
